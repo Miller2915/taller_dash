@@ -7,8 +7,6 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 
-
-
 app = dash.Dash(
     __name__,
     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
@@ -18,11 +16,19 @@ app.title = "Dashboard energia"
 server = app.server
 app.config.suppress_callback_exceptions = True
 
-
 # Load data from csv
 def load_data():
-    # To do: Completar la función 
+    # Cargar los datos
+    df = pd.read_csv('datos_energia.csv')
     
+    # Convertir la columna 'time' a formato datetime
+    df['time'] = pd.to_datetime(df['time'])
+    
+    # Establecer la columna 'time' como el índice
+    df.set_index('time', inplace=True)
+    
+    # Retornar el DataFrame
+    return df
 
 # Cargar datos
 data = load_data()
@@ -30,7 +36,7 @@ data = load_data()
 # Graficar serie
 def plot_series(data, initial_date, proy):
     data_plot = data.loc[initial_date:]
-    data_plot = data_plot[:-(120-proy)]
+    data_plot = data_plot[:-(120 - proy)]
     fig = go.Figure([
         go.Scatter(
             name='Demanda energética',
@@ -77,18 +83,13 @@ def plot_series(data, initial_date, proy):
             x=1
         ),
         yaxis_title='Demanda total [MW]',
-        #title='Continuous, variable value error bars',
         hovermode="x"
     )
-    #fig = px.line(data2, x='local_timestamp', y="Demanda total [MW]", markers=True, labels={"local_timestamp": "Fecha"})
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="#2cfec1")
     fig.update_xaxes(showgrid=True, gridwidth=0.25, gridcolor='#7C7C7C')
     fig.update_yaxes(showgrid=True, gridwidth=0.25, gridcolor='#7C7C7C')
-    #fig.update_traces(line_color='#2cfec1')
 
     return fig
-
-
 
 def description_card():
     """
@@ -97,15 +98,13 @@ def description_card():
     return html.Div(
         id="description-card",
         children=[
-            #html.H5("Proyecto 1"),
             html.H3("Pronóstico de producción energética"),
             html.Div(
                 id="intro",
-                children="Esta herramienta contiene información sobre la demanda energética total en Austria cada hora según lo públicado en ENTSO-E Data Portal. Adicionalmente, permite realizar pronósticos hasta 5 dias en el futuro."
+                children="Esta herramienta contiene información sobre la demanda energética total en Austria cada hora según lo públicado en ENTSO-E Data Portal. Adicionalmente, permite realizar pronósticos hasta 5 días en el futuro."
             ),
         ],
     )
-
 
 def generate_control_card():
     """
@@ -144,7 +143,6 @@ def generate_control_card():
                                 id="dropdown-hora-inicial-hora",
                                 options=[{"label": i, "value": i} for i in np.arange(0,25)],
                                 value=pd.to_datetime(max(data.index)-dt.timedelta(days=7)).hour,
-                                # style=dict(width='50%', display="inline-block")
                             )
                         ],
                         style=dict(width='20%')
@@ -171,16 +169,12 @@ def generate_control_card():
                     )
                 ]
             )     
-     
         ]
     )
-
 
 app.layout = html.Div(
     id="app-container",
     children=[
-        
-        # Left column
         html.Div(
             id="left-column",
             className="four columns",
@@ -191,15 +185,10 @@ app.layout = html.Div(
                 )
             ],
         ),
-        
-        # Right column
         html.Div(
             id="right-column",
             className="eight columns",
             children=[
-
-
-                # Grafica de la serie de tiempo
                 html.Div(
                     id="model_graph",
                     children=[
@@ -210,23 +199,19 @@ app.layout = html.Div(
                         )
                     ],
                 ),
-
-            
             ],
         ),
     ],
 )
 
-
 @app.callback(
     Output(component_id="plot_series", component_property="figure"),
     [Input(component_id="datepicker-inicial", component_property="date"),
-    Input(component_id="dropdown-hora-inicial-hora", component_property="value"),
-    Input(component_id="slider-proyeccion", component_property="value")]
+     Input(component_id="dropdown-hora-inicial-hora", component_property="value"),
+     Input(component_id="slider-proyeccion", component_property="value")]
 )
 def update_output_div(date, hour, proy):
-
-    if ((date is not None) & (hour is not None) & (proy is not None)):
+    if (date is not None) and (hour is not None) and (proy is not None):
         hour = str(hour)
         minute = str(0)
 
@@ -236,7 +221,6 @@ def update_output_div(date, hour, proy):
         # Graficar
         plot = plot_series(data, initial_date, int(proy))
         return plot
-
 
 # Run the server
 if __name__ == "__main__":
